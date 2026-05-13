@@ -31,6 +31,14 @@ def _headers() -> dict:
     }
 
 
+def _block_heavy(route, request):
+    """Abort heavy resource types in Playwright to cut bandwidth."""
+    if request.resource_type in ('image', 'font', 'media', 'stylesheet'):
+        route.abort()
+    else:
+        route.continue_()
+
+
 def _fetch(url: str, timeout: int = 10):
     """Fetch a URL and return HTML text, or None on failure."""
     try:
@@ -240,6 +248,7 @@ def _fetch_js_fallback(url: str, domain: str, visited: set, delay: float):
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             page.set_extra_http_headers({'Accept-Language': 'en-US,en;q=0.9'})
+            page.route('**/*', _block_heavy)
 
             for try_url in urls_to_try:
                 if len(emails) >= 5:
